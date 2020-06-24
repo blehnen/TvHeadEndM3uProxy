@@ -30,16 +30,11 @@ Settings are located in TvHeadEndM3uProxy.json
 
 You'll need to provide the following
 
-| Setting				    | Value					|Example
-
+| Setting				    | Value					|Example |
 | ------------- 		| ------------- |
-
 | TvHeadendAddress	| Location of Tvheadend	| http://127.0.0.1:9981
-
 | TvHeadEndUserName	| Username				| tvuser
-
 | TvHeadEndPassword | Password				| apassword
-
 
 You can connect and download the modified file via a browser -
 
