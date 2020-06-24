@@ -114,7 +114,7 @@ namespace TvHeadEndM3uProxyService
 
             WebServerOptions options = new WebServerOptions();
             options.WithUrlPrefixes(urls);
-            options.WithMode(HttpListenerMode.Microsoft);
+            options.WithMode(HttpListenerMode.EmbedIO);
             var server = new EmbedIO.WebServer(options);
 
             server.WithWebApi("/api", m => m
