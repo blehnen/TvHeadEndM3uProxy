@@ -20,6 +20,8 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
+
+using System.Runtime.InteropServices;
 using Serilog;
 using SimpleInjector;
 using Topshelf;
@@ -42,36 +44,49 @@ namespace TvHeadEndM3uProxy
 
             RegisterServices.Register(Container);
 
-            HostFactory.Run(x =>
+            bool isWindows = System.Runtime.InteropServices.RuntimeInformation
+                .IsOSPlatform(OSPlatform.Windows);
+
+            if (isWindows)
             {
-                x.UseSimpleInjector(Container);
-
-                x.Service<MainService>(s =>
+                HostFactory.Run(x =>
                 {
-                    s.ConstructUsingSimpleInjector();
-                    s.WhenStarted(p => p.Start());
-                    s.WhenStopped(p => p.Stop());
+                    x.UseSimpleInjector(Container);
+
+                    x.Service<MainService>(s =>
+                    {
+                        s.ConstructUsingSimpleInjector();
+                        s.WhenStarted(p => p.Start());
+                        s.WhenStopped(p => p.Stop());
+                    });
+                    x.RunAsNetworkService();
+
+                    x.StartAutomatically();
+                    x.UseSerilog(Log.Logger);
+                    x.EnableServiceRecovery(r =>
+                    {
+                        r.RestartService(0);
+                        r.RestartService(1);
+                        r.RestartService(2);
+                        r.OnCrashOnly();
+                        r.SetResetPeriod(1);
+                    });
+
+                    x.SetDescription("A proxy for the TvHeadEnd M3u files");
+                    x.SetDisplayName("TvHeadEndM3uProxy");
+                    x.SetServiceName("TvHeadEndM3uProxy");
                 });
-                x.RunAsNetworkService();
 
-                x.StartAutomatically();
-                x.UseSerilog(Log.Logger);
-                x.EnableServiceRecovery(r =>
-                {
-                    r.RestartService(0);
-                    r.RestartService(1);
-                    r.RestartService(2);
-                    r.OnCrashOnly();
-                    r.SetResetPeriod(1);
-                });
-
-                x.SetDescription("A proxy for the TvHeadEnd M3u files");
-                x.SetDisplayName("TvHeadEndM3uProxy");
-                x.SetServiceName("TvHeadEndM3uProxy");
-            });
-
-            Container.Dispose();
-            Log.CloseAndFlush();
+                Container.Dispose();
+                Log.CloseAndFlush();
+            }
+            else
+            {
+                var runner = Container.GetInstance<RunForDotNetCore>();
+                runner.Run();
+                Container.Dispose();
+                Log.CloseAndFlush();
+            }
         }
     }
 }

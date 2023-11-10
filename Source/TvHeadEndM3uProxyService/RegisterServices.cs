@@ -45,6 +45,7 @@ namespace TvHeadEndM3uProxyService
             container.Register<MainService>(Lifestyle.Singleton);
             container.Register<WebServer>(Lifestyle.Singleton);
             container.Register<TvHeadendController>(Lifestyle.Singleton);
+            container.Register<RunForDotNetCore>(Lifestyle.Singleton);
 
             container.Verify();
         }
