@@ -24,8 +24,9 @@ Installation - Windows
 This will install the proxy as a windows service.  The default port it will listen on is 33721
 
 Installation - Linux
+-------------
 
-DotNet TvHeadEndM3uProxy.dll
+* DotNet TvHeadEndM3uProxy.dll
 
 Note that the above runs the proxy directly - you can leverage a systemd service defination to run the proxy as a deamon.
 
