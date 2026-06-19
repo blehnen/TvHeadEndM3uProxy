@@ -70,3 +70,10 @@ Request flow:
 `GET /health` is localhost-restricted (`RequireHost`) and backs the container HEALTHCHECK (`dotnet TvHeadEndM3uProxy.dll healthcheck`).
 
 `SharedAssemblyInfo.cs` (repo root) is linked into both projects for shared assembly metadata; `Version` is set per-csproj.
+
+## Lessons Learned
+
+- The runtime image is **chiseled** (`aspnet:10.0-noble-chiseled`) — no shell, curl, or wget. Any container probe must be the app self-probe (`dotnet TvHeadEndM3uProxy.dll healthcheck`) in exec/JSON-array form, never a shell `CMD`.
+- In GitHub Actions `run:` blocks, never interpolate `${{ github.* }}` directly into shell — assign to a step-level `env:` var and reference the quoted variable (CWE-94 hardening).
+- The image publishes to GHCR via the built-in `GITHUB_TOKEN` (no extra secrets); releases are `v*` tags whose version must match the host csproj `<Version>`.
+- `appsettings.json` and `docker-compose.yml` ship only empty/placeholder credentials — never commit real ones; credentials are never logged.
