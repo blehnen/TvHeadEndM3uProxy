@@ -120,34 +120,59 @@ namespace TvHeadEndM3uProxyService
                 return line;
             }
 
-            // Determine the &profile=... suffix from the original query (PathAndQuery
-            // is used because Uri.Query normalises %2B etc; PathAndQuery gives us the
-            // raw bytes, but we only need the &profile substring which is plain ASCII).
-            var profileSuffix = ExtractProfileSuffix(uri.PathAndQuery);
+            // Build the rewritten query: drop the expiring "ticket" parameter and keep
+            // every other parameter (profile, etc.) in its original order, with a
+            // spec-correct leading '?'. PathAndQuery is used (not Uri.Query) because
+            // Uri.Query normalises %2B etc; the kept parameters are plain ASCII.
+            var querySuffix = BuildQuerySuffix(uri.PathAndQuery);
 
             // String-compose the rewritten URL (never UriBuilder — it re-encodes the path).
-            // Drop the entire query; glue &profile directly onto the path (no '?').
             // Encode each credential component so special chars (@, :, /, space, etc.)
             // produce a valid URL authority (Uri.EscapeDataString is a no-op for plain
-            // ASCII alnum values such as "user"/"pass", keeping existing fixtures byte-identical).
+            // ASCII alnum values such as "user"/"pass").
             var u = Uri.EscapeDataString(username);
             var p = Uri.EscapeDataString(password);
-            return $"{uri.Scheme}://{u}:{p}@{uri.Authority}{uri.AbsolutePath}{profileSuffix}";
+            return $"{uri.Scheme}://{u}:{p}@{uri.Authority}{uri.AbsolutePath}{querySuffix}";
         }
 
-        // Returns the substring from "&profile" to the END of pathAndQuery (including
-        // the leading '&'), or empty string when absent. This matches the legacy
-        // behavior exactly: everything from "&profile" onward is retained — including
-        // any parameters that follow profile — and the rest of the query is dropped.
-        private static string ExtractProfileSuffix(string pathAndQuery)
+        // Rebuilds the query string after dropping the "ticket" parameter, preserving
+        // the order and raw bytes of every other parameter. Returns a spec-correct
+        // suffix ("?a=1&b=2") or empty string when nothing remains. Handles a profile
+        // (or any param) appearing first — it becomes the leading '?a=...' rather than
+        // being lost or glued on with a stray '&'.
+        private static string BuildQuerySuffix(string pathAndQuery)
         {
-            var idx = pathAndQuery.IndexOf("&profile", StringComparison.Ordinal);
-            if (idx < 0)
+            var q = pathAndQuery.IndexOf('?');
+            if (q < 0)
             {
                 return string.Empty;
             }
 
-            return pathAndQuery.Substring(idx);
+            var query = pathAndQuery.Substring(q + 1);
+            if (query.Length == 0)
+            {
+                return string.Empty;
+            }
+
+            var result = new StringBuilder();
+            foreach (var part in query.Split('&'))
+            {
+                if (part.Length == 0)
+                {
+                    continue;
+                }
+
+                var eq = part.IndexOf('=');
+                var key = eq < 0 ? part : part.Substring(0, eq);
+                if (string.Equals(key, "ticket", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                result.Append(result.Length == 0 ? '?' : '&').Append(part);
+            }
+
+            return result.ToString();
         }
     }
 }

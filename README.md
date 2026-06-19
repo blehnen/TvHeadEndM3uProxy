@@ -6,7 +6,7 @@ TvHeadend's default playlist uses per-channel `?ticket=...` tokens that expire a
 
 ```
 http://127.0.0.1:9981/stream/channelid/1234?ticket=dfdkdjflsdjfdsl&profile=pass
-  ->  http://username:password@127.0.0.1:9981/stream/channelid/1234&profile=pass
+  ->  http://username:password@127.0.0.1:9981/stream/channelid/1234?profile=pass
 ```
 
 The rewritten playlist is served at `GET /api/tvheadend/channels`.

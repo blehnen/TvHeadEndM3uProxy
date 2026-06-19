@@ -8,7 +8,7 @@ A small HTTP proxy that downloads the M3U channel playlist from a [TvHeadend](ht
 
 ```
 http://127.0.0.1:9981/stream/channelid/1234?ticket=...&profile=pass
-  ->  http://username:password@127.0.0.1:9981/stream/channelid/1234&profile=pass
+  ->  http://username:password@127.0.0.1:9981/stream/channelid/1234?profile=pass
 ```
 
 Consumers fetch the rewritten list from `GET http://<host>:33721/api/tvheadend/channels`.

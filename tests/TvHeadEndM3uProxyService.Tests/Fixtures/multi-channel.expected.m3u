@@ -1,7 +1,7 @@
 #EXTM3U
 #EXTINF:-1,Channel One
-http://user:pass@127.0.0.1:9981/stream/channelid/1234&profile=pass
+http://user:pass@127.0.0.1:9981/stream/channelid/1234?profile=pass
 #EXTINF:-1,Channel Two
 http://user:pass@127.0.0.1:9981/stream/channelid/5678
 #EXTINF:-1,Channel Three
-http://user:pass@127.0.0.1:9981/stream/channelid/9999&profile=pass
+http://user:pass@127.0.0.1:9981/stream/channelid/9999?profile=pass

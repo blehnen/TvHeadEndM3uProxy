@@ -44,10 +44,11 @@ namespace TvHeadEndM3uProxyService.Tests
     //   #EXTINF:-1,Channel One
     //   http://127.0.0.1:9981/stream/channelid/1234?ticket=ABC&profile=pass
     //
-    // Expected rewrite (ticket dropped, creds injected, &profile retained):
+    // Expected rewrite (ticket dropped, creds injected, profile retained with a
+    // spec-correct leading '?'):
     //   #EXTM3U
     //   #EXTINF:-1,Channel One
-    //   http://user:pass@127.0.0.1:9981/stream/channelid/1234&profile=pass
+    //   http://user:pass@127.0.0.1:9981/stream/channelid/1234?profile=pass
     // ---------------------------------------------------------------------------
     [TestClass]
     public class ChannelsEndpointTests
@@ -61,11 +62,11 @@ namespace TvHeadEndM3uProxyService.Tests
             "http://127.0.0.1:9981/stream/channelid/1234?ticket=ABC&profile=pass\n";
 
         // The expected rewritten body after PlaylistRewriter runs with user/pass credentials.
-        // Ticket is dropped; user:pass@ injected; &profile suffix retained.
+        // Ticket is dropped; user:pass@ injected; profile retained with a spec-correct '?'.
         private const string ExpectedBody =
             "#EXTM3U\n" +
             "#EXTINF:-1,Channel One\n" +
-            "http://user:pass@127.0.0.1:9981/stream/channelid/1234&profile=pass\n";
+            "http://user:pass@127.0.0.1:9981/stream/channelid/1234?profile=pass\n";
 
         private static readonly byte[] ExpectedBytes = Encoding.UTF8.GetBytes(ExpectedBody);
 

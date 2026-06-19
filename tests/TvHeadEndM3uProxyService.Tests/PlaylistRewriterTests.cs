@@ -100,9 +100,8 @@ namespace TvHeadEndM3uProxyService.Tests
             CollectionAssert.AreEqual(expected, actual);
         }
 
-        // Regression: when a query parameter follows &profile, the legacy transform
-        // retained everything from "&profile" to the end of the query (profile + any
-        // trailing params), dropping only what came before it. Locks that behavior.
+        // Regression: drop only the ticket parameter and keep every other parameter
+        // (profile plus any trailing params) in order, with a spec-correct leading '?'.
         [TestMethod]
         public void ProfileWithTrailingParams_BytesMatchExpected()
         {
