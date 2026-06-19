@@ -16,40 +16,57 @@ Consumers fetch the rewritten list from `GET http://<host>:33721/api/tvheadend/c
 ## Build & run
 
 ```bash
-# Build the whole solution (multi-targets net472, netcoreapp3.1, net6.0)
+# Build the whole solution (net10.0)
 dotnet build Source/TvHeadEndM3uProxy.sln
 
-# Run on Linux / .NET (console mode, "press any key to stop")
-dotnet Source/TvHeadEndM3uProxy/bin/Debug/net6.0/TvHeadEndM3uProxy.dll
+# Run the test suite (MSTest, 25 tests under tests/TvHeadEndM3uProxyService.Tests/)
+dotnet test Source/TvHeadEndM3uProxy.sln
 
-# Windows: install/uninstall as a Windows service (Topshelf verbs)
-TvHeadEndM3uProxy.exe install
-TvHeadEndM3uProxy.exe uninstall
+# Run as a Docker container
+docker build -t tvheadendm3uproxy .
+docker compose up
+
+# Or pull the pre-built image
+docker pull ghcr.io/blehnen/tvheadendm3uproxy:latest
 ```
-
-There is no test project — `dotnet test` has nothing to run.
-
-The build requires the bundled `Lib/PlayLists.Net/` assemblies (a vendored PlaylistsNET referenced by HintPath, not a NuGet package).
 
 ## Configuration
 
-Runtime settings live in `TvHeadEndM3uProxy.json` (copied to the output dir on build). `TvHeadendAddress`, `TvHeadEndUserName`, and `TvHeadEndPassword` are required and validated at startup (`Configuration.Validate()` throws if any is empty). `HostAddress` defaults to `http://+:33721/`. The checked-in JSON holds placeholder credentials — never commit real ones.
+Settings are bound via strongly-typed `IOptions` from environment variables first, with `appsettings.json` for local development. Options classes live in `Source/TvHeadEndM3uProxyService/Config/TvHeadendOptions.cs` and `Config/ProxyOptions.cs`.
 
-Serilog output config (console + rolling file `Logs/Log.txt`) lives in `App.config` `appSettings`, read via `ReadFrom.AppSettings()`.
+The double-underscore (`__`) is the hierarchy separator for environment variables.
+
+**Required** (validated at startup via `ValidateOnStart` — missing values fail fast with a clear message):
+
+| Variable | Description |
+|---|---|
+| `TVHEADEND__ADDRESS` | Base URL of the TvHeadend server (e.g. `http://192.168.1.10:9981`) |
+| `TVHEADEND__USERNAME` | TvHeadend username |
+| `TVHEADEND__PASSWORD` | TvHeadend password |
+
+**Optional**:
+
+| Variable | Default | Description |
+|---|---|---|
+| `PROXY_API_KEY` | _(none)_ | When set, all requests to `/api/tvheadend/channels` require an `X-Api-Key` header matching this value |
+| `CACHE_TTL_SECONDS` | `0` | Cache the rewritten playlist in memory for this many seconds; `0` disables caching |
+| `ASPNETCORE_URLS` | `http://+:33721` | Bind address for the web server |
+
+Serilog console logging is configured in `appsettings.json`. There is no `App.config`.
 
 ## Architecture
 
-Two projects, wired with SimpleInjector:
+Two projects, both targeting `net10.0`:
 
-- **`TvHeadEndM3uProxy`** — the executable / entry point (`Program.cs`). Detects OS at runtime: on Windows it hosts `MainService` as a Topshelf Windows service (auto-start, crash recovery); on non-Windows it resolves `RunForDotNetCore` and runs as a blocking console app. Both paths call the same `MainService.Start()/Stop()`.
-- **`TvHeadEndM3uProxyService`** — the actual proxy logic, framework-agnostic (multi-targets including netstandard2.0).
+- **`TvHeadEndM3uProxy`** — ASP.NET Core Minimal API host. `Program.cs` builds a `WebApplication` with built-in DI and maps all endpoints. Hosts `ApiKeyEndpointFilter.cs` which implements the optional API-key gate.
+- **`TvHeadEndM3uProxyService`** — framework-agnostic class library containing all proxy logic.
 
 Request flow:
 
-1. `WebServer` (`WebServer.cs`) hosts an [EmbedIO](https://github.com/unosquare/embedio) web server bound to `HostAddress`, mounting the Web API under `/api`. It bridges EmbedIO's Swan logger to Serilog via `Logging/WebServerLogger.cs`. Start/Stop are guarded by a lock and a `CancellationTokenSource` so Stop can't race ahead of Start.
-2. `TvHeadendController` (`Controllers/TvHeadendController.cs`) handles `GET /tvheadend/channels`: downloads `{TvHeadendAddress}/playlist/channels.m3u` with a Basic auth header into a temp file, rewrites it, and streams it back as a `channels.m3u` attachment.
-3. `ModifyPlayList` (`ModifyPlayList.cs`) parses the M3U with PlaylistsNET (`IPTVContent`) and rewrites each entry's `Path` to the inline-credential form, preserving any `&profile=...` suffix.
+1. `GET /api/tvheadend/channels` (mapped in `Program.cs`) invokes `TvHeadendChannelService.cs`. The endpoint is optionally gated by `ApiKeyEndpointFilter` when `PROXY_API_KEY` is set (responds 401 otherwise), and optionally served from an `IMemoryCache` when `CACHE_TTL_SECONDS > 0`. Returns the rewritten playlist as a `channels.m3u` `application/octet-stream` attachment; returns 503 on upstream failure.
+2. `TvHeadendClient.cs` downloads `{TvHeadendAddress}/playlist/channels.m3u` fully in memory via `IHttpClientFactory` with an HTTP Basic auth header. No temp files, no `WebClient`.
+3. `PlaylistRewriter.cs` performs the in-house verbatim M3U rewrite: only stream-URL lines are transformed (injects `user:pass@`, drops the `?ticket=...` query string, re-appends any `&profile=...` suffix); all other lines and line endings pass through unchanged.
 
-DI composition root is `RegisterServices.Register(Container)` — registers everything as singletons, loads + validates `Configuration`, and calls `container.Verify()`.
+`GET /health` is localhost-restricted (`RequireHost`) and backs the container HEALTHCHECK (`dotnet TvHeadEndM3uProxy.dll healthcheck`).
 
 `SharedAssemblyInfo.cs` (repo root) is linked into both projects for shared assembly metadata; `Version` is set per-csproj.
