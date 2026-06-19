@@ -32,6 +32,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v5
+        with:
+          persist-credentials: false
 
       - name: Validate tag format (push only)
         if: github.event_name == 'push'
@@ -70,6 +72,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v5
+        with:
+          persist-credentials: false
 
       - name: Resolve version
         id: version
@@ -111,13 +115,16 @@ jobs:
             ${{ env.IMAGE_NAME }}:latest
 
       - name: Write summary
+        env:
+          IMAGE_NAME: ${{ env.IMAGE_NAME }}
+          VERSION: ${{ steps.version.outputs.version }}
+          PUSHED: ${{ github.event_name == 'push' || inputs.dry_run == false }}
         run: |
           echo "## Publish Summary" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "| Key | Value |" >> "$GITHUB_STEP_SUMMARY"
           echo "| --- | ----- |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Image | \`${{ env.IMAGE_NAME }}\` |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Version | \`${{ steps.version.outputs.version }}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Image | \`${IMAGE_NAME}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Version | \`${VERSION}\` |" >> "$GITHUB_STEP_SUMMARY"
           echo "| Platforms | \`linux/amd64, linux/arm64\` |" >> "$GITHUB_STEP_SUMMARY"
-          PUSHED="${{ github.event_name == 'push' || inputs.dry_run == false }}"
           echo "| Pushed | \`${PUSHED}\` |" >> "$GITHUB_STEP_SUMMARY"
