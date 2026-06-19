@@ -17,7 +17,7 @@ URL-line transform (replicates the legacy per-URL logic exactly):
 
 Non-URL lines (`#EXTM3U`, `#EXTINF`, comments, blank lines) and the original line
 endings are preserved **exactly as the input**. We do NOT reproduce the old
-PlaylistsNET serializer's reformatting (it inserted a space before the `#EXTINF`
+vendored playlist-serializer reformatting (it inserted a space before the `#EXTINF`
 comma and normalized CRLF→LF — both incidental artifacts, not desired behavior).
 
 ## Encoding / line endings
