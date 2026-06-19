@@ -1,0 +1,43 @@
+# docker-compose.yml — local run example for TvHeadEndM3uProxy
+#
+# All TVHEADEND__* variables are REQUIRED. The app will exit immediately
+# at startup if any is absent or empty (ValidateOnStart is enabled).
+#
+# Replace the placeholder values below with real values before starting.
+# Never commit real credentials to version control.
+#
+# SECURITY: This proxy embeds TvHeadend basic-auth credentials inline in the
+# rewritten stream URLs and serves them with no in-app TLS or authentication on
+# the playlist by default. Run it ONLY on a trusted LAN (or behind an
+# operator-controlled reverse proxy). Do NOT expose port 33721 to the internet.
+# Optionally set PROXY_API_KEY below to require a key on the channels endpoint.
+#
+# Usage:
+#   docker compose up --build
+#
+# To stop:
+#   docker compose down
+
+services:
+  tvheadend-proxy:
+    build: .
+    ports:
+      - "33721:33721"
+    environment:
+      # Required: TvHeadend server address (include scheme and port)
+      TVHEADEND__ADDRESS: "http://your-tvheadend-host:9981"
+      # Required: TvHeadend HTTP basic-auth username
+      TVHEADEND__USERNAME: "your-username"
+      # Required: TvHeadend HTTP basic-auth password
+      TVHEADEND__PASSWORD: "your-password"
+
+      # Optional: API key required on GET /api/tvheadend/channels
+      # Leave blank (or remove) to leave the endpoint open.
+      # PROXY_API_KEY: ""
+
+      # Optional: playlist cache TTL in seconds (0 = disabled, default)
+      # CACHE_TTL_SECONDS: "0"
+
+      # Optional: override Kestrel listen URL (also update the ports mapping above)
+      # ASPNETCORE_URLS: "http://+:33721"
+    restart: unless-stopped

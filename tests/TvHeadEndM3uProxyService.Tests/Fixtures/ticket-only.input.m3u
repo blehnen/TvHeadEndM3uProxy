@@ -1,0 +1,3 @@
+#EXTM3U
+#EXTINF:-1,Channel Two
+http://127.0.0.1:9981/stream/channelid/5678?ticket=XYZ

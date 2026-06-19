@@ -1,4 +1,4 @@
-﻿// ---------------------------------------------------------------------
+// ---------------------------------------------------------------------
 // MIT License
 //
 // Copyright (c) 2020 Brian Lehnen
@@ -9,10 +9,10 @@
 // to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be included in all
 // copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -20,25 +20,26 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
-namespace TvHeadEndM3uProxyService
+
+using System.ComponentModel.DataAnnotations;
+
+namespace TvHeadEndM3uProxyService.Config
 {
-    public class MainService
+    public sealed class ProxyOptions
     {
-        private readonly WebServer _server;
+        public const string SectionName = "Proxy";
 
-        public MainService(WebServer server)
-        {
-            _server = server;
-        }
+        /// <summary>
+        /// Optional API key. When null or empty the endpoint is open (no auth required).
+        /// Maps from env var PROXY_API_KEY.
+        /// </summary>
+        public string? ApiKey { get; set; }
 
-        public void Start()
-        {
-            _server.Start();
-        }
-
-        public void Stop()
-        {
-            _server?.Stop();
-        }
+        /// <summary>
+        /// Cache TTL in seconds. 0 (default) disables the cache. Must be non-negative.
+        /// Maps from env var CACHE_TTL_SECONDS.
+        /// </summary>
+        [Range(0, int.MaxValue, ErrorMessage = "CACHE_TTL_SECONDS must be greater than or equal to 0.")]
+        public int CacheTtlSeconds { get; set; }
     }
 }

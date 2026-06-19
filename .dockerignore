@@ -1,0 +1,33 @@
+# Git and tooling metadata
+.git/
+.shipyard/
+.github/
+.vs/
+.idea/
+*.user
+*.suo
+
+# Build artifacts — never copy local compiled output into the image
+**/bin/
+**/obj/
+
+# Runtime output
+Logs/
+
+# Vendored legacy DLLs — unreferenced by any active project (Phase 6 will remove Lib/)
+Lib/
+
+# Test runner output
+TestResults/
+
+# Local developer appsettings overrides — may contain real credentials
+**/appsettings.Development.json
+**/appsettings.*.local.json
+**/*.local.json
+
+# Docker artifacts (not needed inside the build context)
+Dockerfile
+docker-compose.yml
+
+# Documentation at repo root
+*.md
