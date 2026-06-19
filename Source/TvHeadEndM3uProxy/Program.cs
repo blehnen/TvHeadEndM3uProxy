@@ -41,7 +41,10 @@ if (args.Length > 0 && args[0] == "healthcheck")
         .AddEnvironmentVariables()
         .Build();
 
-    var port = Program.ResolveHealthCheckPort(config);
+    var port = Program.ResolveHealthCheckPort(
+        config,
+        aspnetcoreUrls: Environment.GetEnvironmentVariable("ASPNETCORE_URLS"),
+        dotnetUrls: Environment.GetEnvironmentVariable("DOTNET_URLS"));
 
     try
     {
@@ -170,12 +173,17 @@ public partial class Program
     /// <summary>
     /// Resolves the listen port used by the healthcheck self-probe.
     /// Priority: ASPNETCORE_URLS env → DOTNET_URLS env → config["Urls"] → default 33721.
+    /// Accepts optional overrides for the two env-var values so tests can call this
+    /// method without mutating process-level environment variables.
     /// </summary>
-    public static int ResolveHealthCheckPort(IConfiguration config)
+    public static int ResolveHealthCheckPort(
+        IConfiguration config,
+        string? aspnetcoreUrls = null,
+        string? dotnetUrls = null)
     {
         var urlString =
-            Environment.GetEnvironmentVariable("ASPNETCORE_URLS")
-            ?? Environment.GetEnvironmentVariable("DOTNET_URLS")
+            aspnetcoreUrls
+            ?? dotnetUrls
             ?? config["Urls"]
             ?? "http://*:33721";
 
