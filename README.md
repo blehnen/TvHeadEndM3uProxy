@@ -65,7 +65,7 @@ All configuration is provided via environment variables.
 | `TVHEADEND__ADDRESS` | yes | — | TvHeadend base URL including scheme and port (e.g. `http://192.168.1.10:9981`) |
 | `TVHEADEND__USERNAME` | yes | — | TvHeadend HTTP basic-auth username |
 | `TVHEADEND__PASSWORD` | yes | — | TvHeadend HTTP basic-auth password |
-| `PROXY_API_KEY` | no | (unset = open) | If set, require this key as an `X-Api-Key` header or `?apikey=` query parameter on the channels endpoint |
+| `PROXY_API_KEY` | no | (unset = open) | If set, require this key in the `X-Api-Key` request header on the channels endpoint. Query-string keys are not accepted (they leak into logs/history). |
 | `CACHE_TTL_SECONDS` | no | `0` (disabled) | Cache the rewritten playlist for this many seconds (0 = always fetch fresh) |
 | `ASPNETCORE_URLS` | no | `http://+:33721` | Kestrel listen URL |
 

@@ -183,7 +183,7 @@ namespace TvHeadEndM3uProxyService.Tests
         }
 
         // -----------------------------------------------------------------------
-        // Test 4: API key ON, wrong key in request -> 401.
+        // Test 4: API key ON, wrong key in the X-Api-Key header -> 401.
         // -----------------------------------------------------------------------
         [TestMethod]
         public async Task ApiKeyOn_WrongKeyInRequest_Returns401()
@@ -192,16 +192,20 @@ namespace TvHeadEndM3uProxyService.Tests
             using var factory = BuildFactory(stub, apiKey: "secret123");
             using var client = factory.CreateClient();
 
-            using var response = await client.GetAsync(EndpointUrl + "?apikey=wrongkey");
+            using var request = new HttpRequestMessage(HttpMethod.Get, EndpointUrl);
+            request.Headers.Add("X-Api-Key", "wrongkey");
+            using var response = await client.SendAsync(request);
 
             Assert.AreEqual(HttpStatusCode.Unauthorized, response.StatusCode);
         }
 
         // -----------------------------------------------------------------------
-        // Test 5: API key ON, correct key via ?apikey= query string -> 200.
+        // Test 5: API key ON, key supplied ONLY via ?apikey= query string -> 401.
+        // Query-string keys are intentionally NOT accepted (they leak into logs,
+        // history, and Referer headers); only the X-Api-Key header is honored.
         // -----------------------------------------------------------------------
         [TestMethod]
-        public async Task ApiKeyOn_CorrectKeyViaQueryString_Returns200()
+        public async Task ApiKeyOn_KeyViaQueryString_Ignored_Returns401()
         {
             var stub = new StubHttpMessageHandler(UpstreamBody);
             using var factory = BuildFactory(stub, apiKey: "secret123");
@@ -209,7 +213,7 @@ namespace TvHeadEndM3uProxyService.Tests
 
             using var response = await client.GetAsync(EndpointUrl + "?apikey=secret123");
 
-            Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
+            Assert.AreEqual(HttpStatusCode.Unauthorized, response.StatusCode);
         }
 
         // -----------------------------------------------------------------------

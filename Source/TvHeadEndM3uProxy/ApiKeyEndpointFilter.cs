@@ -34,9 +34,10 @@ namespace TvHeadEndM3uProxy
     /// <summary>
     /// Minimal-API endpoint filter that enforces an optional API key.
     /// When <see cref="ProxyOptions.ApiKey"/> is null or whitespace the endpoint is open.
-    /// When set, the key must be supplied via query string <c>?apikey=</c> or header
-    /// <c>X-Api-Key</c>. Uses a constant-time comparison to guard against timing attacks.
-    /// The key value is never logged.
+    /// When set, the key must be supplied via the <c>X-Api-Key</c> header. Query-string
+    /// keys are intentionally NOT accepted — they leak into proxy logs, browser history,
+    /// and Referer headers. Uses a constant-time comparison to guard against timing
+    /// attacks. The key value is never logged.
     /// </summary>
     public sealed class ApiKeyEndpointFilter : IEndpointFilter
     {
@@ -59,13 +60,10 @@ namespace TvHeadEndM3uProxy
                 return await next(context);
             }
 
-            // Accept the key from query string first, then header.
+            // Accept the key ONLY from the X-Api-Key header (not the query string,
+            // which would leak the key into logs/history/Referer).
             var request = context.HttpContext.Request;
-            string? candidate = request.Query["apikey"];
-            if (string.IsNullOrEmpty(candidate))
-            {
-                candidate = request.Headers["X-Api-Key"];
-            }
+            string? candidate = request.Headers["X-Api-Key"];
 
             // Constant-time comparison that does NOT leak the configured key's length.
             // FixedTimeEquals requires equal-length spans; rather than branch on length
