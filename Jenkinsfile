@@ -27,22 +27,25 @@ pipeline {
                 sh 'dotnet test Source/TvHeadEndM3uProxy.sln -c Release --no-build --logger "console;verbosity=normal"'
             }
             post {
+                // Workspace cleanup must run inside the stage, where a node/agent
+                // context exists. The top-level post runs under `agent none` and
+                // cannot call node-scoped steps like cleanWs().
                 always {
                     echo 'Build & Test stage complete'
+                    cleanWs()
                 }
             }
         }
     }
 
     post {
+        // Pipeline-level post runs with `agent none` — only use steps that do NOT
+        // require a node context here (echo is fine; cleanWs() is not).
         success {
             echo 'Pipeline succeeded: solution built and all tests passed.'
         }
         failure {
             echo 'Pipeline failed. Check stage logs above.'
-        }
-        always {
-            cleanWs()
         }
     }
 }
