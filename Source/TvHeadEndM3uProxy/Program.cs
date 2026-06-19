@@ -86,7 +86,10 @@ builder.Services.AddOptions<TvHeadendOptions>()
     .ValidateDataAnnotations()
     .ValidateOnStart();
 
-builder.Services.AddOptions<ProxyOptions>().BindConfiguration(ProxyOptions.SectionName);
+builder.Services.AddOptions<ProxyOptions>()
+    .BindConfiguration(ProxyOptions.SectionName)
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
 
 builder.Services.AddHttpClient<TvHeadendClient>();
 builder.Services.AddMemoryCache();

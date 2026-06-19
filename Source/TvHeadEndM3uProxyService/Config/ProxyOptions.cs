@@ -21,6 +21,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+using System.ComponentModel.DataAnnotations;
+
 namespace TvHeadEndM3uProxyService.Config
 {
     public sealed class ProxyOptions
@@ -34,9 +36,10 @@ namespace TvHeadEndM3uProxyService.Config
         public string? ApiKey { get; set; }
 
         /// <summary>
-        /// Cache TTL in seconds. 0 (default) disables the cache.
+        /// Cache TTL in seconds. 0 (default) disables the cache. Must be non-negative.
         /// Maps from env var CACHE_TTL_SECONDS.
         /// </summary>
+        [Range(0, int.MaxValue, ErrorMessage = "CACHE_TTL_SECONDS must be greater than or equal to 0.")]
         public int CacheTtlSeconds { get; set; }
     }
 }
