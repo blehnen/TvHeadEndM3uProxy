@@ -6,6 +6,12 @@
 # Replace the placeholder values below with real values before starting.
 # Never commit real credentials to version control.
 #
+# SECURITY: This proxy embeds TvHeadend basic-auth credentials inline in the
+# rewritten stream URLs and serves them with no in-app TLS or authentication on
+# the playlist by default. Run it ONLY on a trusted LAN (or behind an
+# operator-controlled reverse proxy). Do NOT expose port 33721 to the internet.
+# Optionally set PROXY_API_KEY below to require a key on the channels endpoint.
+#
 # Usage:
 #   docker compose up --build
 #
