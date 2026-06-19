@@ -1,0 +1,3 @@
+#EXTM3U
+#EXTINF:-1,Ch1
+http://tvh.local:9981/stream/channel/1234?ticket=abc

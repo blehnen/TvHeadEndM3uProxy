@@ -348,3 +348,11 @@ MigrationBackup/
 
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
+
+# Local developer appsettings overrides — never commit filled-in credentials.
+# Keep the base appsettings.json tracked (it ships with empty placeholders).
+# Developers should set credentials via environment variables or one of the
+# files below (which are git-ignored so they can never be accidentally committed).
+appsettings.Development.json
+appsettings.*.local.json
+*.local.json
