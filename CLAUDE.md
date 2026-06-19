@@ -36,7 +36,7 @@ Settings are bound via strongly-typed `IOptions` from environment variables firs
 
 The double-underscore (`__`) is the hierarchy separator for environment variables.
 
-**Required** (validated at startup via `ValidateOnStart` — missing values fail fast with a clear message):
+**Required** (validated at startup via `ValidateOnStart`; missing values fail fast with a clear message):
 
 | Variable | Description |
 |---|---|
@@ -58,13 +58,13 @@ Serilog console logging is configured in `appsettings.json`. There is no `App.co
 
 Two projects, both targeting `net10.0`:
 
-- **`TvHeadEndM3uProxy`** — ASP.NET Core Minimal API host. `Program.cs` builds a `WebApplication` with built-in DI and maps all endpoints. Hosts `ApiKeyEndpointFilter.cs` which implements the optional API-key gate.
-- **`TvHeadEndM3uProxyService`** — framework-agnostic class library containing all proxy logic.
+- `TvHeadEndM3uProxy` is the ASP.NET Core Minimal API host. `Program.cs` builds a `WebApplication` with built-in DI and maps all endpoints. It hosts `ApiKeyEndpointFilter.cs`, which implements the optional API-key gate.
+- `TvHeadEndM3uProxyService` is a framework-agnostic class library containing all proxy logic.
 
 Request flow:
 
 1. `GET /api/tvheadend/channels` (mapped in `Program.cs`) invokes `TvHeadendChannelService.cs`. The endpoint is optionally gated by `ApiKeyEndpointFilter` when `PROXY_API_KEY` is set (responds 401 otherwise), and optionally served from an `IMemoryCache` when `CACHE_TTL_SECONDS > 0`. Returns the rewritten playlist as a `channels.m3u` `application/octet-stream` attachment; returns 503 on upstream failure.
-2. `TvHeadendClient.cs` downloads `{TvHeadendAddress}/playlist/channels.m3u` fully in memory via `IHttpClientFactory` with an HTTP Basic auth header. No temp files, no `WebClient`.
+2. `TvHeadendClient.cs` downloads `{TvHeadendAddress}/playlist/channels.m3u` fully in memory via `IHttpClientFactory` with an HTTP Basic auth header. It uses no temp file and no `WebClient`.
 3. `PlaylistRewriter.cs` performs the in-house verbatim M3U rewrite: only stream-URL lines are transformed (injects `user:pass@`, drops the `?ticket=...` query string, re-appends any `&profile=...` suffix); all other lines and line endings pass through unchanged.
 
 `GET /health` is localhost-restricted (`RequireHost`) and backs the container HEALTHCHECK (`dotnet TvHeadEndM3uProxy.dll healthcheck`).
@@ -73,7 +73,7 @@ Request flow:
 
 ## Lessons Learned
 
-- The runtime image is **chiseled** (`aspnet:10.0-noble-chiseled`) — no shell, curl, or wget. Any container probe must be the app self-probe (`dotnet TvHeadEndM3uProxy.dll healthcheck`) in exec/JSON-array form, never a shell `CMD`.
-- In GitHub Actions `run:` blocks, never interpolate `${{ github.* }}` directly into shell — assign to a step-level `env:` var and reference the quoted variable (CWE-94 hardening).
+- The runtime image is chiseled (`aspnet:10.0-noble-chiseled`), which has no shell, curl, or wget. Any container probe must be the app self-probe (`dotnet TvHeadEndM3uProxy.dll healthcheck`) in exec/JSON-array form, never a shell `CMD`.
+- In GitHub Actions `run:` blocks, never interpolate `${{ github.* }}` directly into shell. Assign it to a step-level `env:` var and reference the quoted variable (CWE-94 hardening).
 - The image publishes to GHCR via the built-in `GITHUB_TOKEN` (no extra secrets); releases are `v*` tags whose version must match the host csproj `<Version>`.
-- `appsettings.json` and `docker-compose.yml` ship only empty/placeholder credentials — never commit real ones; credentials are never logged.
+- `appsettings.json` and `docker-compose.yml` ship only empty placeholder credentials. Never commit real ones, and note that credentials are never logged.
