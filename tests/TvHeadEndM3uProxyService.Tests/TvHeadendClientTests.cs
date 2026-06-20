@@ -96,8 +96,31 @@ namespace TvHeadEndM3uProxyService.Tests
             Assert.AreEqual("Basic", auth!.Scheme);
 
             var expectedParameter = Convert.ToBase64String(
-                Encoding.ASCII.GetBytes($"{TestUsername}:{TestPassword}"));
+                Encoding.UTF8.GetBytes($"{TestUsername}:{TestPassword}"));
             Assert.AreEqual(expectedParameter, auth.Parameter);
+        }
+
+        [TestMethod]
+        public async Task FetchAsync_NonAsciiPassword_IsUtf8Base64_NotCorrupted()
+        {
+            const string user = "müller";
+            const string pass = "pä$$wörd";
+
+            var handler = new StubHttpMessageHandler(CannedM3u);
+            using var httpClient = new HttpClient(handler);
+            var client = new TvHeadendClient(httpClient, BuildOptions(username: user, password: pass));
+
+            await client.FetchAsync();
+
+            var auth = handler.CapturedRequest!.Headers.Authorization;
+            Assert.AreEqual("Basic", auth!.Scheme);
+
+            // The credential must be UTF-8 encoded (preserving the non-ASCII bytes),
+            // not ASCII (which would corrupt 'ü'/'ä'/'ö' to '?').
+            var expectedUtf8 = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{user}:{pass}"));
+            var corruptedAscii = Convert.ToBase64String(Encoding.ASCII.GetBytes($"{user}:{pass}"));
+            Assert.AreEqual(expectedUtf8, auth.Parameter);
+            Assert.AreNotEqual(corruptedAscii, auth.Parameter);
         }
 
         [TestMethod]

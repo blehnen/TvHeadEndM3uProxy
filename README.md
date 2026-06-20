@@ -73,6 +73,14 @@ Notes:
 - The double-underscore (`__`) is the .NET configuration hierarchy separator for nested keys.
 - Missing required variables (`TVHEADEND__ADDRESS`, `TVHEADEND__USERNAME`, `TVHEADEND__PASSWORD`) cause an immediate startup failure with a clear error message.
 
+### Troubleshooting: upstream returns 401
+
+If the log shows `Upstream TvHeadend fetch failed ... 401 (Unauthorized)` even though the credentials are correct, the proxy reached TvHeadend and TvHeadend rejected the auth. Check, in order:
+
+1. **Authentication type.** The proxy sends HTTP Basic auth. In TvHeadend, **Configuration → General → Base → Authentication type** must be `Plain` or `Both plain and digest`. A `Digest`-only setting rejects Basic auth with a 401.
+2. **Allowed networks.** The request comes from the proxy container's IP (e.g. a `172.17.x.x` Docker bridge address). The TvHeadend access entry's **Allowed networks** must include it (`0.0.0.0/0,::/0` allows all).
+3. **Password mangling.** Confirm the value the container actually received with `docker inspect <container> --format '{{range .Config.Env}}{{println .}}{{end}}' | grep TVHEADEND`. Quote passwords that contain shell metacharacters (`$`, `!`, backticks) so the shell does not alter them before they reach the container.
+
 ---
 
 ## Endpoints

@@ -56,8 +56,11 @@ namespace TvHeadEndM3uProxyService
         public async Task<string> FetchAsync(CancellationToken ct = default)
         {
             var uri = $"{_options.Address.TrimEnd('/')}/playlist/channels.m3u";
+            // UTF-8 (not ASCII) so non-ASCII characters in the username/password are
+            // preserved rather than corrupted to '?'. Modern TvHeadend decodes the
+            // Basic credential as UTF-8.
             var credential = Convert.ToBase64String(
-                Encoding.ASCII.GetBytes($"{_options.Username}:{_options.Password}"));
+                Encoding.UTF8.GetBytes($"{_options.Username}:{_options.Password}"));
 
             using var request = new HttpRequestMessage(HttpMethod.Get, uri);
             request.Headers.Authorization = new AuthenticationHeaderValue("Basic", credential);
